@@ -1,11 +1,11 @@
-// Configuração da API - URL DO SEU BACKEND NO RAILWAY
+
 const API_URL = 'https://bauzil-lab-server-production.up.railway.app';
 
-// Estado da aplicação
+
 let currentProducts = [];
 let deleteProductId = null;
 
-// Elementos DOM
+
 const productForm = document.getElementById('productForm');
 const productId = document.getElementById('productId');
 const nomeInput = document.getElementById('nome');
@@ -18,14 +18,14 @@ const cancelBtn = document.getElementById('cancelBtn');
 const clearBtn = document.getElementById('clearBtn');
 const submitBtn = document.getElementById('submitBtn');
 
-// Modais
+
 const deleteModal = document.getElementById('deleteModal');
 const messageModal = document.getElementById('messageModal');
 const deleteProductName = document.getElementById('deleteProductName');
 const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
 
-// Funções auxiliares
+
 function formatCurrency(value) {
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -66,11 +66,10 @@ function closeMessageModal() {
     messageModal.style.display = 'none';
 }
 
-// CRUD Operations - COMPLETAMENTE AJUSTADO PARA AS ROTAS DO SEU BACKEND
+
 async function loadProducts() {
     try {
         showLoading();
-        // Rota GET "/" - lista todos os produtos
         const response = await fetch(`${API_URL}/`);
         
         if (!response.ok) {
@@ -150,6 +149,7 @@ function updateStats() {
     productCount.textContent = currentProducts.length;
 }
 
+
 async function saveProduct(event) {
     event.preventDefault();
     
@@ -171,9 +171,9 @@ async function saveProduct(event) {
     
     const isEditing = productId.value !== '';
     
-    // Rotas corretas baseadas no seu backend
+   
     const url = isEditing ? `${API_URL}/atualizar/${productId.value}` : `${API_URL}/cadastro`;
-    const method = 'POST'; // Seu backend usa POST para cadastro e POST para atualizar
+    const method = isEditing ? 'PATCH' : 'POST'; 
     
     try {
         submitBtn.disabled = true;
@@ -187,10 +187,16 @@ async function saveProduct(event) {
             body: JSON.stringify(product)
         });
         
-        const responseText = await response.text();
+        let responseData;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            responseData = await response.json();
+        } else {
+            responseData = await response.text();
+        }
         
         if (!response.ok) {
-            throw new Error(`Erro ${response.status}: ${responseText}`);
+            throw new Error(`Erro ${response.status}: ${typeof responseData === 'string' ? responseData : JSON.stringify(responseData)}`);
         }
         
         showMessage('Sucesso', isEditing ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!');
@@ -220,7 +226,6 @@ async function editProduct(id) {
     cancelBtn.style.display = 'inline-block';
     submitBtn.innerHTML = '<i class="fas fa-save"></i> Atualizar Produto';
     
-    // Scroll para o formulário
     document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -237,15 +242,20 @@ async function deleteProduct() {
         confirmDeleteBtn.disabled = true;
         confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Excluindo...';
         
-        // Rota DELETE "/deletar/:id" - conforme seu backend
         const response = await fetch(`${API_URL}/deletar/${deleteProductId}`, {
             method: 'DELETE'
         });
         
-        const responseText = await response.text();
+        let responseData;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            responseData = await response.json();
+        } else {
+            responseData = await response.text();
+        }
         
         if (!response.ok) {
-            throw new Error(`Erro ${response.status}: ${responseText}`);
+            throw new Error(`Erro ${response.status}: ${typeof responseData === 'string' ? responseData : JSON.stringify(responseData)}`);
         }
         
         showMessage('Sucesso', 'Produto excluído com sucesso!');
@@ -284,14 +294,14 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Event Listeners
+
 if (productForm) productForm.addEventListener('submit', saveProduct);
 if (clearBtn) clearBtn.addEventListener('click', resetForm);
 if (cancelBtn) cancelBtn.addEventListener('click', resetForm);
 if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', deleteProduct);
 if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', closeDeleteModal);
 
-// Fechar modais ao clicar no X
+
 document.querySelectorAll('.modal-close').forEach(closeBtn => {
     closeBtn.addEventListener('click', function() {
         deleteModal.style.display = 'none';
@@ -302,7 +312,7 @@ document.querySelectorAll('.modal-close').forEach(closeBtn => {
 const messageCloseBtn = document.getElementById('messageCloseBtn');
 if (messageCloseBtn) messageCloseBtn.addEventListener('click', closeMessageModal);
 
-// Fechar modal ao clicar fora
+
 window.addEventListener('click', (event) => {
     if (event.target === deleteModal) {
         closeDeleteModal();
@@ -312,11 +322,11 @@ window.addEventListener('click', (event) => {
     }
 });
 
-// Inicializar aplicação
+
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     
-    // Adicionar atalho para tecla ESC fechar modais
+   
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeDeleteModal();
@@ -325,7 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Tornar funções globais para acesso no HTML
 window.editProduct = editProduct;
 window.confirmDelete = confirmDelete;
 window.loadProducts = loadProducts;
